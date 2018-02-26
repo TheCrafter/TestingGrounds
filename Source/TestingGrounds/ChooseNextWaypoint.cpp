@@ -4,27 +4,35 @@
 #include "BehaviorTree/BlackboardComponent.h"
 #include "AIController.h"
 
-#include "PatrollingGuard.h" // TODO: Remove coupling
+#include "PatrolRoute.h"
 
 EBTNodeResult::Type UChooseNextWaypoint::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
-    AAIController* AIController = OwnerComp.GetAIOwner();
-    if (ensure(AIController->GetPawn()))
+    APawn* ControlledPawn = OwnerComp.GetAIOwner()->GetPawn();
+    if (ensure(ControlledPawn))
     {
-        // Get patrol points
-        APatrollingGuard* ControlledPawn = Cast<APatrollingGuard>(AIController->GetPawn());
-        TArray<AActor*> PatrolPoints = ControlledPawn->PatrolPoints;
+        UPatrolRoute* PatrolRoute = ControlledPawn->FindComponentByClass<UPatrolRoute>();
+        if (PatrolRoute)
+        {
+            TArray<AActor*> PatrolPoints = PatrolRoute->GetPatrolPoints();
+            if (PatrolPoints.Num() == 0)
+            {
+               UE_LOG(LogTemp, Warning, TEXT("PatrolRoute Component is missing Patrol Points. Pawn: %s"), *ControlledPawn->GetName())
+            }
+            else
+            {
+                // Set next waypoint
+                UBlackboardComponent* BlackboardComp = OwnerComp.GetBlackboardComponent();
+                int32 Index = BlackboardComp->GetValueAsInt(IndexKey.SelectedKeyName);
+                BlackboardComp->SetValueAsObject(WaypointKey.SelectedKeyName, PatrolPoints[Index]);
 
-        // Set next waypoint
-        UBlackboardComponent* BlackboardComp = OwnerComp.GetBlackboardComponent();
-        int32 Index = BlackboardComp->GetValueAsInt(IndexKey.SelectedKeyName);
-        BlackboardComp->SetValueAsObject(WaypointKey.SelectedKeyName, PatrolPoints[Index]);
+                // Cycle index
+                int32 NewIndex = (Index + 1) % PatrolPoints.Num();
+                BlackboardComp->SetValueAsInt(IndexKey.SelectedKeyName, NewIndex);
 
-        // Cycle index
-        int32 NewIndex = (Index + 1) % PatrolPoints.Num();
-        BlackboardComp->SetValueAsInt(IndexKey.SelectedKeyName, NewIndex);
-    
-        return EBTNodeResult::Succeeded;
+                return EBTNodeResult::Succeeded;
+            }
+        }
     }
 
     return EBTNodeResult::Failed;
