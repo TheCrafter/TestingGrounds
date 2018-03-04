@@ -41,9 +41,9 @@ public:
     virtual void Tick(float DeltaTime) override;
 
 protected:
-	virtual void BeginPlay() override;
+    virtual void BeginPlay() override;
 
+public:
     /** Fires a projectile. */
     void OnFire();
-	
 };
