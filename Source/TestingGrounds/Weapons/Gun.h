@@ -36,14 +36,14 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
     class UAnimInstance* AnimInstance;
 
+    /** Fires a projectile. */
+    UFUNCTION(BlueprintCallable, Category = "Input")
+    void OnFire();
+
 public:	
 	AGun();
     virtual void Tick(float DeltaTime) override;
 
 protected:
     virtual void BeginPlay() override;
-
-public:
-    /** Fires a projectile. */
-    void OnFire();
 };
